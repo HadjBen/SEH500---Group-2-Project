@@ -21,8 +21,9 @@
 
 All documentation is in the `documents/` folder:
 
-- **`documents/PARTNER_HANDOFF.md`** - **START HERE** - Complete handoff guide for audio implementation (AI-friendly)
-- **`documents/COLLABORATION_GUIDE.md`** - **Git workflow guide** - How to clone, branch, commit, and push changes
+- **`documents/VSCODE_SETUP_GUIDE.md`** - **START HERE** - Complete VS Code setup and workflow guide
+- **`documents/PARTNER_HANDOFF.md`** - Audio implementation guide (AI-friendly)
+- **`documents/COLLABORATION_GUIDE.md`** - Git workflow guide (command line)
 - **`documents/PROJECT_REPORT.md`** - Final technical report (for submission)
 - **`documents/PROJECT_REQUIREMENTS.md`** - Full project requirements
 - **`documents/README.md`** - Detailed README
