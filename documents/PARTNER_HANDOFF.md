@@ -42,14 +42,25 @@ This document provides complete context for implementing SD card audio playback 
 
 #### Step 2: Verify Drivers in Project
 
-The project should already have these drivers included. Verify by checking:
+**Important:** Drivers are included **within the project folder**, not at the workspace level. The project structure is self-contained.
 
-1. **Right-click project** → **Properties**
-2. **C/C++ Build** → **Settings** → **Tool Settings** → **MCU C Compiler** → **Includes**
-3. Check that these paths exist:
-   - `drivers/` folder contains: `fsl_sai.c/h`, `fsl_sdhc.c/h`, `fsl_edma.c/h`, `fsl_dmamux.c/h`, `fsl_i2c.c/h`
-   - `fatfs/source/` folder contains: `fsl_sd_disk.c/h`
-   - `sdmmc/` folder contains: SD/MMC host drivers
+Verify drivers are present by checking the project folder structure:
+
+1. **In MCUXpresso IDE Project Explorer**, expand the `SEH500_Project` folder
+2. Verify these folders exist **within the project**:
+   - `SEH500_Project/drivers/` - Should contain: `fsl_sai.c/h`, `fsl_sdhc.c/h`, `fsl_edma.c/h`, `fsl_dmamux.c/h`, `fsl_i2c.c/h`
+   - `SEH500_Project/fatfs/source/fsl_sd_disk/` - Should contain: `fsl_sd_disk.c/h`
+   - `SEH500_Project/sdmmc/` - Should contain SD/MMC host driver files
+
+3. **Check build settings:**
+   - **Right-click project** → **Properties**
+   - **C/C++ Build** → **Settings** → **Tool Settings** → **MCU C Compiler** → **Includes**
+   - Verify include paths are **relative to project root**, such as:
+     - `${ProjDirPath}/drivers`
+     - `${ProjDirPath}/fatfs/source`
+     - `${ProjDirPath}/sdmmc/inc`
+
+**Note:** When you clone the repository, all drivers come with it. The project is self-contained - you don't need to install drivers separately if the repository is cloned correctly.
 
 #### Step 3: Required Drivers List
 
@@ -77,25 +88,40 @@ The following drivers **must be present** in the project:
 
 #### Step 4: If Drivers Are Missing
 
-If any drivers are missing from the project:
+**Important:** Drivers should already be in the cloned repository. If they're missing, it means the repository wasn't cloned correctly.
 
-1. **Right-click project** → **Properties**
-2. **C/C++ Build** → **Settings** → **Tool Settings** → **MCU Linker** → **Libraries**
-3. Add missing driver source files:
-   - Navigate to SDK installation folder
-   - Copy missing `.c` files to `drivers/` folder
-   - Copy missing `.h` files to `drivers/` folder
-4. **Refresh project:** Right-click project → **Refresh**
+**First, verify the clone:**
+1. Check that you cloned the **entire repository**, not just selected files
+2. Verify the `drivers/` folder exists in the project root
+3. Check that all folders from the repository are present
+
+**If drivers are actually missing:**
+
+1. **Re-clone the repository** (recommended):
+   ```bash
+   git clone https://github.com/HadjBen/SEH500---Group-2-Project.git
+   ```
+
+2. **Or manually add missing drivers from SDK:**
+   - Navigate to your NXP SDK installation folder
+   - Find the driver files (usually in `SDK_Install_Path/devices/MK66F18/drivers/`)
+   - Copy missing `.c` files to `SEH500_Project/drivers/` folder
+   - Copy missing `.h` files to `SEH500_Project/drivers/` folder
+   - **Refresh project:** Right-click project → **Refresh**
+
+**Note:** The project is designed to be self-contained. All drivers are included in the repository, so you shouldn't need to add them manually if the clone was successful.
 
 #### Step 5: Verify Build Configuration
 
 1. **Right-click project** → **Properties**
-2. **C/C++ Build** → **Settings** → **Tool Settings**
-3. Verify include paths include:
-   - `drivers/`
-   - `fatfs/source/`
-   - `sdmmc/inc/`
-   - `board/`
+2. **C/C++ Build** → **Settings** → **Tool Settings** → **MCU C Compiler** → **Includes**
+3. Verify include paths are set correctly (should be relative to project root):
+   - `${ProjDirPath}/drivers` or `../drivers`
+   - `${ProjDirPath}/fatfs/source` or `../fatfs/source`
+   - `${ProjDirPath}/sdmmc/inc` or `../sdmmc/inc`
+   - `${ProjDirPath}/board` or `../board`
+
+**Important:** These paths are **relative to the project folder**, not the workspace. The `${ProjDirPath}` variable points to the `SEH500_Project` folder where all drivers are located.
 
 ### Project Configuration Check
 
