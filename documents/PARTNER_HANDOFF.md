@@ -17,6 +17,106 @@ This document provides complete context for implementing SD card audio playback 
 
 ---
 
+## Prerequisites and Setup
+
+### Required Software
+
+1. **MCUXpresso IDE** (v11.0 or later recommended)
+2. **NXP SDK** for FRDM-K66F board
+3. **Git** (for cloning repository)
+4. **Visual Studio Code** (optional, for better editing experience)
+
+### Driver Installation and Verification
+
+**Important:** All required drivers are already included in the repository. However, you need to verify they're properly configured in MCUXpresso IDE:
+
+#### Step 1: Verify SDK Installation
+
+1. Open MCUXpresso IDE
+2. Go to **Window** → **Preferences** → **MCUXpresso IDE** → **SDK Packs**
+3. Ensure **FRDM-K66F SDK** is installed
+4. If not installed:
+   - Go to **Help** → **Install New Software**
+   - Add SDK update site
+   - Install FRDM-K66F SDK
+
+#### Step 2: Verify Drivers in Project
+
+The project should already have these drivers included. Verify by checking:
+
+1. **Right-click project** → **Properties**
+2. **C/C++ Build** → **Settings** → **Tool Settings** → **MCU C Compiler** → **Includes**
+3. Check that these paths exist:
+   - `drivers/` folder contains: `fsl_sai.c/h`, `fsl_sdhc.c/h`, `fsl_edma.c/h`, `fsl_dmamux.c/h`, `fsl_i2c.c/h`
+   - `fatfs/source/` folder contains: `fsl_sd_disk.c/h`
+   - `sdmmc/` folder contains: SD/MMC host drivers
+
+#### Step 3: Required Drivers List
+
+The following drivers **must be present** in the project:
+
+**Core Drivers (Already Included):**
+- ✅ `fsl_gpio.c/h` - GPIO for buttons and LEDs
+- ✅ `fsl_port.h` - Port pin configuration
+- ✅ `fsl_uart.c/h` - UART for serial communication
+- ✅ `fsl_pit.c/h` - Periodic Interrupt Timer
+- ✅ `fsl_clock.c/h` - Clock management
+- ✅ `fsl_common.c/h` - Common utilities
+
+**SD Card Drivers (Already Included):**
+- ✅ `fsl_sdhc.c/h` - SD Host Controller (hardware interface)
+- ✅ `fatfs/source/fsl_sd_disk/fsl_sd_disk.c/h` - FatFS SD card disk driver
+- ✅ `sdmmc/` - SD/MMC host driver files
+
+**Audio Drivers (Already Included):**
+- ✅ `fsl_sai.c/h` - Serial Audio Interface
+- ✅ `fsl_sai_edma.c/h` - SAI with Enhanced DMA support
+- ✅ `fsl_edma.c/h` - Enhanced DMA controller
+- ✅ `fsl_dmamux.c/h` - DMA Multiplexer
+- ✅ `fsl_i2c.c/h` - I2C for audio codec communication
+
+#### Step 4: If Drivers Are Missing
+
+If any drivers are missing from the project:
+
+1. **Right-click project** → **Properties**
+2. **C/C++ Build** → **Settings** → **Tool Settings** → **MCU Linker** → **Libraries**
+3. Add missing driver source files:
+   - Navigate to SDK installation folder
+   - Copy missing `.c` files to `drivers/` folder
+   - Copy missing `.h` files to `drivers/` folder
+4. **Refresh project:** Right-click project → **Refresh**
+
+#### Step 5: Verify Build Configuration
+
+1. **Right-click project** → **Properties**
+2. **C/C++ Build** → **Settings** → **Tool Settings**
+3. Verify include paths include:
+   - `drivers/`
+   - `fatfs/source/`
+   - `sdmmc/inc/`
+   - `board/`
+
+### Project Configuration Check
+
+Before starting implementation, verify:
+
+- [ ] Project builds without errors
+- [ ] All driver files are present in `drivers/` folder
+- [ ] FatFS driver exists: `fatfs/source/fsl_sd_disk/`
+- [ ] SD card config exists: `sdmmc/template/sdhc/sdmmc_config.c/h`
+- [ ] `source/ffconf.h` has `SD_DISK_ENABLE` defined
+
+### If Project Doesn't Build
+
+1. **Clean project:** Right-click → **Clean Project**
+2. **Refresh:** Right-click → **Refresh**
+3. **Rebuild:** Right-click → **Build Project**
+4. Check **Problems** view for missing includes or undefined references
+5. Verify SDK is properly installed and linked
+
+---
+
 ## Current System State
 
 ### What's Working ✅
@@ -511,6 +611,14 @@ Register this callback during audio hardware initialization.
 - **FatFS Documentation:** FatFS website for filesystem API
 - **Board Manual:** FRDM-K66F User Guide for pin assignments and codec information
 - **Reference Code:** `backup/SEH500_Project_audio_attempt.c` for initialization sequences
+- **Driver Documentation:** All driver documentation is in the SDK installation folder under `docs/`
+
+### Driver Documentation Locations
+
+After installing NXP SDK, find driver documentation at:
+- `SDK_Install_Path/docs/api/` - API reference for all drivers
+- `SDK_Install_Path/docs/drivers/` - Driver-specific documentation
+- MCUXpresso IDE: **Help** → **MCUXpresso IDE User Guide** → **SDK Documentation**
 
 ---
 
