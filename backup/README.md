@@ -3,23 +3,19 @@
 ## Contents
 
 ### `SEH500_Project_audio_attempt.c`
-Previous attempt at implementing audio playback. This file contains:
+Previous attempt at implementing SD card audio playback. This file contains:
 
 **What's Useful:**
 - SD card initialization code (`init_sd_card()`)
 - Audio hardware initialization (`init_audio_hardware()`)
 - SAI/DMA configuration
+- WAV file reading structure
 - Audio streaming setup
-
-**Note:** This file uses embedded audio data (water_audio.h, restroom_audio.h) which is NOT the approach we're using. We're using SD card file reading instead.
 
 **Why It Was Backed Up:**
 - Audio playback had issues (hardware initialization problems)
-- Used embedded audio approach (not SD card file reading)
 - Reverted to simpler version with just LEDs and buttons
-- Kept as reference for audio hardware initialization only
-
-**Important:** Do NOT use the embedded audio approach from this file. Use SD card file reading as described in `documents/PARTNER_HANDOFF.md`.
+- Kept as reference for SD card and audio integration
 
 **How to Use:**
 - Reference the SD card initialization code

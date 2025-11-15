@@ -25,7 +25,10 @@ Thumbs.db
 *.bak
 *~
 
-# Audio header files (deleted - using SD card approach)
-# source/water_audio.h
-# source/restroom_audio.h
+# Audio header files (generated, not needed for SD card version)
+source/water_audio.h
+source/restroom_audio.h
+
+# PowerShell script (optional tool)
+convert_audio.ps1
 
