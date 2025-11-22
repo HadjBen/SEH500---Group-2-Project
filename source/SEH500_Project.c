@@ -1,6 +1,5 @@
 /*
  * SEH500 Project - Assistive Audio-Visual Communicator
- * WORKING VERSION - Buttons, LEDs, and Print Statements Only
  * For non-verbal patients to communicate needs (water, washroom)
  */
 
@@ -165,6 +164,7 @@ static void handle_washroom_alert(void) {
         PRINTF("Washroom alert started (Red LED flicker ON)\r\n");
     }
 }
+
 
 // SW3 button interrupt handler (PTA10) - Washroom button
 // Handler name must match the interrupt vector table: PORTA_IRQHandler

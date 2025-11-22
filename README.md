@@ -1,4 +1,4 @@
-# SEH500 Project - Assistive Audio-Visual Communicator
+# SEH500 Project - Assistive Communication Device
 
 ## Quick Start
 
@@ -14,16 +14,14 @@
 
 ## Current Status
 
-✅ **Working:** Buttons, LEDs, UART keyboard control, state machine  
-🎵 **TODO:** SD card audio playback (see `documents/PARTNER_HANDOFF.md`)
+✅ **Complete:** Buttons, LEDs, UART keyboard control, state machine, interrupt handlers, assembly code
 
 ## Documentation
 
 All documentation is in the `documents/` folder:
 
-- **`documents/PARTNER_HANDOFF.md`** - **START HERE** - Complete handoff guide for audio implementation (AI-friendly)
-- **`documents/PROJECT_REPORT.md`** - Final technical report (for submission)
-- **`documents/PROJECT_REQUIREMENTS.md`** - Full project requirements
+- **`documents/SEH500_Project_Report_Revised.md`** - Final technical report (for submission)
+- **`documents/CODE_EXPLANATION.md`** - Detailed line-by-line code explanation
 - **`documents/README.md`** - Detailed README
 
 ## Hardware
@@ -43,15 +41,26 @@ All documentation is in the `documents/` folder:
 
 ```
 SEH500_Project/
-├── source/              # Source code
+├── source/              # Source code (C and assembly)
 ├── documents/           # All documentation
-├── audio/              # WAV files for SD card
 ├── backup/             # Reference code
 ├── drivers/            # SDK drivers
-├── fatfs/              # FatFS filesystem
+├── fatfs/              # FatFS filesystem (not used in final implementation)
 └── board/              # Board configuration
 ```
 
-## Next Steps
+## Features
 
-See `documents/PARTNER_HANDOFF.md` for complete SD card audio playback implementation guide.
+- **Interrupt-driven GPIO** - Button presses trigger hardware interrupts
+- **State machine** - Three states (IDLE, WATER_ALERT, WASHROOM_ALERT)
+- **Assembly language** - Direct hardware register manipulation for LED control
+- **Bidirectional UART** - Keyboard input and debug output
+- **PIT Timer** - Periodic interrupts for LED blinking (500ms intervals)
+
+## Code Overview
+
+- **`source/SEH500_Project.c`** - Main application with state machine and interrupt handlers
+- **`source/gpio_led.s`** - Assembly functions for LED control
+- **`source/wav_parser.s`** - Assembly functions for WAV file parsing (reference only, not used)
+
+See `documents/CODE_EXPLANATION.md` for detailed line-by-line explanations of all code.

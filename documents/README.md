@@ -1,9 +1,9 @@
-# SEH500 Project - Assistive Audio-Visual Communicator
+# SEH500 Project - Assistive Communication Device
 
 ## Quick Start
 
 1. **Open Project:** Open `SEH500_Project` in MCUXpresso IDE
-2. **Build:** Project → Build All (should compile successfully)
+2. **Build:** Project → Build All
 3. **Flash:** Flash to FRDM-K66F board
 4. **Test:**
    - Press SW2 → Green LED flickers (water alert)
@@ -12,16 +12,10 @@
    - Type 'T' in serial terminal → Washroom alert
    - Press same button/key again → Cancels alert
 
-## Current Status
-
-✅ **Working:** Buttons, LEDs, UART keyboard control, state machine  
-🎵 **TODO:** SD card audio playback (see `PARTNER_HANDOFF.md`)
-
 ## Documentation
 
-- **`PARTNER_HANDOFF.md`** - **START HERE** - Complete handoff guide for audio implementation (AI-friendly)
-- **`PROJECT_REPORT.md`** - Final technical report (for submission)
-- **`PROJECT_REQUIREMENTS.md`** - Full project requirements
+- **`SEH500_Project_Report_Revised.md`** - Final technical report 
+- **`CODE_EXPLANATION.md`** - Detailed line-by-line code explanation
 
 ## Hardware
 
@@ -35,8 +29,3 @@
 1. **UART** - Serial communication (keyboard input + console output)
 2. **GPIO** - Buttons and LEDs
 3. **PIT Timer** - LED flickering (500ms intervals)
-
-## Next Steps
-
-See `PARTNER_HANDOFF.md` for complete SD card audio playback implementation guide. This document is designed to be uploaded to AI assistants for help with implementation.
-

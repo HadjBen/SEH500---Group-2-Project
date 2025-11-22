@@ -1,6 +1,5 @@
 # SEH500 Project Report: Assistive Communication Device
 
-**Date:** November 19, 2025
 **Project Members:** Hadj Benseddik, Danial Ebadati
 
 ---
@@ -8,6 +7,8 @@
 ## 1. Problem Statement
 
 This project demonstrates how to build an assistive communication device using embedded systems concepts learned in class. The goal is to show how microcontroller peripherals, interrupts, and assembly programming can be combined to create a functional system. We chose a healthcare application where non-verbal patients need to signal basic needs like water or washroom assistance [1]. This application provides a practical context for demonstrating GPIO configuration, interrupt handling, state machine design, and assembly language programming.
+
+![1763825147045](image/SEH500_Project_Report/1763825147045.png)
 
 ---
 
