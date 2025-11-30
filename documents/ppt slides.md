@@ -1,4 +1,5 @@
 # SEH500 Project Presentation: Assistive Communication Device
+
 **Project Members:** Hadj Benseddik, Danial Ebadati
 
 ---
@@ -13,6 +14,7 @@ A prototype device for non-verbal patients to signal basic needs
 **Hardware:** NXP FRDM-K66F Microcontroller Board
 
 **Features:**
+
 - Two buttons: SW2 (water) and SW3 (washroom)
 - Color-coded LEDs: Green for water, Red for washroom
 - Serial communication for keyboard control
@@ -32,13 +34,11 @@ A prototype device for non-verbal patients to signal basic needs
 **Setup Process:**
 
 1. **Enable Clock** - Set bit in SIM_SCGC5 register
+
    - Port E: bit 13
    - Port C: bit 11
-
 2. **Configure Pin Mode** - Set PORT_PCR register to GPIO mode (0x0100)
-
 3. **Set as Output** - Configure GPIO_PDDR register (set bit = output)
-
 4. **Initialize State** - Set GPIO_PDOR to turn LED OFF initially
 
 **Why Assembly:** Direct register access for efficient hardware control
@@ -46,6 +46,7 @@ A prototype device for non-verbal patients to signal basic needs
 **Code Location:** `gpio_led.s` - `setup_green()` and `setup_red()` functions
 
 **Assembly Code Example:**
+
 ```assembly
 // Enable Port E clock
 ldr r1, =0x40048038     // SIM_SCGC5
@@ -61,11 +62,13 @@ str r0, [r1]
 **Assembly Functions for LED Control**
 
 **Key Functions in `gpio_led.s`:**
+
 - `setup_leds()` - Initializes both LEDs
 - `func_green_led_on()` / `func_green_led_off()`
 - `func_red_led_on()` / `func_red_led_off()`
 
 **How They Work:**
+
 - Read current GPIO_PDOR register value
 - Modify specific bit using BIC (clear) or ORR (set)
 - Write back to register
@@ -75,6 +78,7 @@ str r0, [r1]
 **Read-Modify-Write:** Ensures other pins on same port are not affected
 
 **Assembly Code Example:**
+
 ```assembly
 func_green_led_on:
     ldr r1, =0x400FF100     // GPIOE_PDOR
@@ -93,6 +97,7 @@ func_green_led_on:
 **Purpose:** Generate interrupts every 500ms to toggle LED states
 
 **Setup Steps:**
+
 1. Get default PIT configuration
 2. Initialize PIT peripheral
 3. Set timer period: 500,000 microseconds
@@ -104,6 +109,7 @@ func_green_led_on:
 **Code Location:** `SEH500_Project.c` - lines 66-72
 
 **C Code:**
+
 ```c
 pit_config_t pitConfig;
 PIT_GetDefaultConfig(&pitConfig);
@@ -123,6 +129,7 @@ EnableIRQ(PIT0_IRQn);
 **Buttons:** SW2 (PTD11) for water, SW3 (PTA10) for washroom
 
 **Setup Process:**
+
 1. **Enable Clock** - `CLOCK_EnableClock()` for Port D and Port A
 2. **Pin Configuration** - Set pull-up resistor, GPIO mode, fast slew rate
 3. **Interrupt Type** - Configure falling-edge detection (button press = LOW)
@@ -134,6 +141,7 @@ EnableIRQ(PIT0_IRQn);
 **Code Location:** `SEH500_Project.c` - `setup_button_interrupts()` function
 
 **Key Code:**
+
 ```c
 CLOCK_EnableClock(kCLOCK_PortD);
 PORT_SetPinConfig(PORTD, WATER_BUTTON_PIN, &portConfig);
@@ -149,27 +157,38 @@ EnableIRQ(PORTD_IRQn);
 
 **Interrupt Handlers - How They Work**
 
-**Three Interrupt Handlers:**
+**Four Interrupt Handlers:**
+
 1. **PORTD_IRQHandler** - Handles SW2 (water button)
 2. **PORTA_IRQHandler** - Handles SW3 (washroom button)
-3. **PIT0_IRQHandler** - Handles 500ms timer for LED flashing
+3. **UART0_RX_TX_IRQHandler** - Handles keyboard input
+4. **PIT0_IRQHandler** - Handles 500ms timer for LED flashing
 
 **Handler Process:**
+
 - Clear interrupt flag first (prevents re-triggering)
-- Call appropriate alert function
+- Process the event (read character, check button state, toggle LED)
+- Call appropriate alert function (for buttons/keyboard)
 - Return from interrupt
 
 **Flag Clearing:** Critical - prevents infinite interrupt loops
 
-**Code Location:** `SEH500_Project.c` - lines 138-199
+**Code Location:** `SEH500_Project.c` - interrupt handlers section
 
-**Example Handler:**
+**Example Handlers:**
+
 ```c
 void PORTD_IRQHandler(void) {
     GPIO_PortClearInterruptFlags(WATER_BUTTON_PORT, 
         1U << WATER_BUTTON_PIN);
-    PRINTF("[BUTTON PRESS] SW2 pressed!\r\n");
     handle_water_alert();
+}
+
+void UART0_RX_TX_IRQHandler(void) {
+    uint8_t ch = UART_ReadByte(uartBase);
+    if (ch == 'W' || ch == 'w') {
+        handle_water_alert();
+    }
 }
 ```
 
@@ -180,11 +199,13 @@ void PORTD_IRQHandler(void) {
 **System State Management**
 
 **Three States:**
+
 - `STATE_IDLE` - No active alert
 - `STATE_WATER_ALERT` - Water request active (green LED flashing)
 - `STATE_WASHROOM_ALERT` - Washroom request active (red LED flashing)
 
 **State Transitions:**
+
 - From IDLE: Press button → Enter alert state, start LED flashing
 - From Alert: Press same button → Return to IDLE, stop LED
 - Switch Alert: Press different button → Cancel current, start new alert
@@ -194,6 +215,7 @@ void PORTD_IRQHandler(void) {
 **Code Location:** `SEH500_Project.c` - `handle_water_alert()` and `handle_washroom_alert()`
 
 **State Diagram:**
+
 ```
 IDLE ←→ WATER_ALERT
   ↕
@@ -211,23 +233,29 @@ WASHROOM_ALERT
 **Configuration:** 115200 baud rate
 
 **Features:**
+
 - **Transmission:** Debug messages sent to computer
 - **Reception:** Keyboard input ('W' for water, 'T' for washroom)
 
 **How It Works:**
-- Main loop checks UART status flags
-- If data received, read character
-- Process command and call appropriate handler
 
-**Code Location:** `SEH500_Project.c` - main loop (lines 84-108)
+- UART hardware generates interrupt when character arrives
+- Interrupt handler reads character and processes command
+- CPU can sleep between keyboard inputs (no polling needed)
+
+**Why Interrupts:** Polling would mean CPU constantly scanning for new characters, wasting CPU cycles. Interrupts allow CPU to sleep until data arrives.
+
+**Code Location:** `SEH500_Project.c` - `UART0_RX_TX_IRQHandler()` and `setup_uart_interrupts()`
 
 **Key Code:**
+
 ```c
-uint32_t statusFlags = UART_GetStatusFlags(uartBase);
-if (statusFlags & kUART_RxDataRegFullFlag) {
-    uint8_t ch = UART_ReadByte(uartBase);
-    if (ch == 'W' || ch == 'w') {
-        handle_water_alert();
+void UART0_RX_TX_IRQHandler(void) {
+    if (statusFlags & kUART_RxDataRegFullFlag) {
+        uint8_t ch = UART_ReadByte(uartBase);
+        if (ch == 'W' || ch == 'w') {
+            handle_water_alert();
+        }
     }
 }
 ```
@@ -239,23 +267,27 @@ if (statusFlags & kUART_RxDataRegFullFlag) {
 **Complete System Integration**
 
 **Hardware Components:**
+
 - GPIO: Buttons (input) and LEDs (output)
 - PIT: Timer for LED flashing
 - UART: Serial communication
 
 **Software Components:**
+
 - C code: Main application, state machine, interrupt handlers
 - Assembly code: Direct LED control (100+ lines)
 
 **Data Flow:**
-1. Button press → GPIO interrupt → Handler → State change
-2. State change → LED control → Assembly functions
-3. PIT interrupt → LED toggle → Visual feedback
-4. UART input → Main loop → State change
 
-**Key Design:** Interrupt-driven (no polling), modular code structure
+1. Button press → GPIO interrupt → Handler → State change
+2. Keyboard input → UART interrupt → Handler → State change
+3. State change → LED control → Assembly functions
+4. PIT interrupt → LED toggle → Visual feedback
+
+**Key Design:** Fully interrupt-driven (no polling), modular code structure
 
 **Block Diagram:**
+
 ```
 Buttons → GPIO Interrupts → State Machine → LED Control (Assembly)
                                     ↓
@@ -273,6 +305,7 @@ Buttons → GPIO Interrupts → State Machine → LED Control (Assembly)
 **What We Built:** Functional proof of concept for assistive communication device
 
 **Key Features Demonstrated:**
+
 - GPIO configuration and control
 - Interrupt-driven input handling
 - Assembly language programming (100+ lines)
@@ -280,6 +313,7 @@ Buttons → GPIO Interrupts → State Machine → LED Control (Assembly)
 - Bidirectional UART communication
 
 **Course Requirements Met:**
+
 - GPIO interrupt handlers
 - Bidirectional UART
 - State machine logic
@@ -315,7 +349,7 @@ Buttons → GPIO Interrupts → State Machine → LED Control (Assembly)
 
 ### Slide 6: Interrupt Service Routines
 
-"We have three interrupt service routines in our system. The PORTD handler responds to SW2 button presses, the PORTA handler responds to SW3 button presses, and the PIT0 handler manages the LED flashing timer. Each handler follows the same pattern: first, clear the interrupt flag to prevent re-triggering, then perform the necessary action - either calling an alert function or toggling the LED. Clearing the interrupt flag is critical - if we forget this step, the system can get stuck in an infinite interrupt loop. The button handlers call shared functions that manage the state machine, while the PIT handler directly toggles the LED state based on the current system state."
+"We have four interrupt service routines in our system. The PORTD handler responds to SW2 button presses, the PORTA handler responds to SW3 button presses, the UART0 handler responds to keyboard input, and the PIT0 handler manages the LED flashing timer. Each handler follows the same pattern: first, clear the interrupt flag to prevent re-triggering, then perform the necessary action - either reading a character, calling an alert function, or toggling the LED. Clearing the interrupt flag is critical - if we forget this step, the system can get stuck in an infinite interrupt loop. The button and keyboard handlers call shared functions that manage the state machine, while the PIT handler directly toggles the LED state based on the current system state."
 
 ### Slide 7: State Machine Logic
 
@@ -323,11 +357,9 @@ Buttons → GPIO Interrupts → State Machine → LED Control (Assembly)
 
 ### Slide 8: UART Serial Communication
 
-"We implemented bidirectional UART communication at 115200 baud. This serves two purposes: sending debug messages to the computer and receiving keyboard commands. In the main loop, we continuously check the UART status flags. When data is received, we read the character and process it. If the character is 'W' or 'w', we trigger a water alert. If it's 'T' or 't', we trigger a washroom alert. This demonstrates bidirectional communication - we can both send information out and receive commands in. The UART allows us to control the system from a computer terminal, which is useful for testing and demonstrates the flexibility of our design."
+"We implemented bidirectional UART communication at 115200 baud. This serves two purposes: sending debug messages to the computer and receiving keyboard commands. We use interrupts for keyboard input, just like we do for the buttons. When a character arrives at the UART, the hardware generates an interrupt, which triggers our UART interrupt handler. The handler reads the character and processes it. If the character is 'W' or 'w', we trigger a water alert. If it's 'T' or 't', we trigger a washroom alert. We could have used polling for keyboard input, but that would mean the CPU was constantly scanning for new characters, which wastes CPU cycles. Using interrupts allows the CPU to sleep until data actually arrives, making the system more efficient. This demonstrates bidirectional communication - we can both send information out and receive commands in. The UART allows us to control the system from a computer terminal, which is useful for testing and demonstrates the flexibility of our design."
 
-### Slide 9: System Architecture Overview
-
-"Let me give you an overview of how all these components work together. On the hardware side, we have GPIO for buttons and LEDs, the PIT timer, and UART for communication. On the software side, we have C code handling the main application, state machine, and interrupt handlers, plus over 100 lines of assembly code for direct LED control. The data flow works like this: when a button is pressed, a GPIO interrupt triggers, which calls a handler that changes the system state. The state change then controls the LEDs through our assembly functions. Meanwhile, the PIT timer generates interrupts every 500 milliseconds to toggle the LED states, creating the flashing effect. The key design principle here is that everything is interrupt-driven - we don't use polling, which makes the system efficient and responsive."
+"Let me give you an overview of how all these components work together. On the hardware side, we have GPIO for buttons and LEDs, the PIT timer, and UART for communication. On the software side, we have C code handling the main application, state machine, and interrupt handlers, plus over 100 lines of assembly code for direct LED control. The data flow works like this: when a button is pressed, a GPIO interrupt triggers, which calls a handler that changes the system state. When keyboard input arrives, a UART interrupt triggers, which also calls a handler that changes the system state. The state change then controls the LEDs through our assembly functions. Meanwhile, the PIT timer generates interrupts every 500 milliseconds to toggle the LED states, creating the flashing effect. The key design principle here is that everything is fully interrupt-driven - we don't use polling for any input, which makes the system efficient and responsive. The main loop simply puts the CPU to sleep, and it wakes up only when an interrupt occurs."
 
 ### Slide 10: Conclusion
 

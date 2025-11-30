@@ -22,7 +22,7 @@ Assistive communication devices exist in various forms [2]. Our project demonstr
 
 This project serves as a proof of concept showing how embedded systems components work together. The system uses the NXP FRDM-K66F microcontroller board with two buttons: SW2 for water requests and SW3 for washroom requests. Both buttons use falling-edge interrupt detection, demonstrating interrupt-driven input handling instead of polling.
 
-Visual feedback comes from color-coded LEDs: green for water requests and red for washroom requests. During an active alert, the corresponding LED flashes continuously. LED control uses assembly language functions that directly manipulate GPIO registers. The system uses bidirectional UART communication at 115200 baud, allowing keyboard control ('W' for water, 'T' for washroom) and debug output. The system uses a state machine with three states: IDLE, WATER_ALERT, and WASHROOM_ALERT. Only one alert can be active at a time. The interrupt-based design removes CPU polling overhead. GPIO interrupts detect button presses instantly, and the Periodic Interrupt Timer (PIT) generates interrupts every 500 milliseconds to control LED flashing.
+Visual feedback comes from color-coded LEDs: green for water requests and red for washroom requests. During an active alert, the corresponding LED flashes continuously. LED control uses assembly language functions that directly manipulate GPIO registers. The system uses bidirectional UART communication at 115200 baud, allowing keyboard control ('W' for water, 'T' for washroom) and debug output. The system uses a state machine with three states: IDLE, WATER_ALERT, and WASHROOM_ALERT. Only one alert can be active at a time. The interrupt-based design removes CPU polling overhead. GPIO interrupts detect button presses instantly, UART interrupts detect keyboard input instantly, and the Periodic Interrupt Timer (PIT) generates interrupts every 500 milliseconds to control LED flashing.
 
 ![1763780328440](image/SEH500_Project_Report_Revised/1763780328440.png)
 
@@ -36,7 +36,7 @@ The system uses a modular design separating hardware abstraction, application lo
 
 ![1763780487641](image/SEH500_Project_Report_Revised/1763780487641.png)
 
-The system has three interrupt service routines. The PORTD interrupt handler responds to SW2 button presses for water alerts, clearing the interrupt flag first to prevent multiple triggers, then calling the water alert function. The PORTA interrupt handler works the same way for SW3 washroom alerts. Both handlers use hardware pull-up resistors and software flag clearing. The PIT interrupt handler runs every 500 milliseconds to toggle LED states during active alerts, letting the CPU do other work between changes.
+The system has four interrupt service routines. The PORTD interrupt handler responds to SW2 button presses for water alerts, clearing the interrupt flag first to prevent multiple triggers, then calling the water alert function. The PORTA interrupt handler works the same way for SW3 washroom alerts. The UART0 interrupt handler responds to keyboard input, reading characters when they arrive and processing commands ('W' for water, 'T' for washroom). All button and keyboard handlers use hardware pull-up resistors and software flag clearing. The PIT interrupt handler runs every 500 milliseconds to toggle LED states during active alerts, letting the CPU do other work between changes.
 
 *(Insert Interrupt Handler Flow Diagram here)*
 
@@ -74,7 +74,25 @@ The assembly implementation provides direct access to memory-mapped registers, e
 
 This project demonstrates that embedded systems concepts learned in class can be applied to build functional assistive devices. The FRDM-K66F board serves as a proof of concept platform, showing how GPIO, interrupts, and assembly programming work together.
 
-The interrupt-driven architecture demonstrates that interrupts work better than polling for event-driven systems. Polling implementations waste CPU cycles continuously checking button states, while our interrupt-driven design responds instantly and lets the CPU stay in low-power idle states between events [7]. This validates the theoretical understanding with practical implementation. The modular design shows proper embedded systems design principles by separating hardware abstraction through SDK drivers, application logic through the state machine, and low-level control through assembly language. The bidirectional UART communication demonstrates both transmission and reception capabilities, meeting the course requirement.
+The interrupt-driven architecture demonstrates that interrupts work better than polling for event-driven systems. Initially, keyboard input was implemented using polling because it was easier to implement. However, after considering the optimization principles learned in class, we decided to optimize the entire codebase to use interrupts instead of polling. This decision was made because polling implementations waste CPU cycles continuously checking for input, while our interrupt-driven design responds instantly and lets the CPU stay in low-power idle states between events [7].
+
+The following table compares the polling approach (initially used for keyboard input) with the interrupt-driven approach (final implementation):
+
+| Aspect | Before (Polling) | After (Interrupts) |
+|--------|------------------|-------------------|
+| **CPU Usage** | Constantly checking UART flags | Sleeps until data arrives |
+| **Efficiency** | Wastes CPU cycles | CPU can do other work or sleep |
+| **Main Loop** | Active polling loop | Empty loop with `__WFI()` (Wait For Interrupt) |
+| **Response Time** | Depends on loop frequency | Immediate (hardware-triggered) |
+| **Power Consumption** | Higher (CPU always active) | Lower (CPU can sleep) |
+
+The benefits gained from switching to interrupts include:
+- **Reduced CPU overhead**: The CPU no longer wastes cycles checking for keyboard input when no data is available
+- **Lower power consumption**: The CPU can enter low-power sleep mode between interrupts, making the system suitable for battery-powered applications
+- **Consistent architecture**: All inputs (buttons and keyboard) now use the same interrupt-driven approach, making the code more maintainable and easier to understand
+- **Better responsiveness**: Keyboard input is processed immediately when data arrives, rather than waiting for the polling loop to check
+
+While polling could have worked for keyboard input, it would mean the CPU was constantly scanning for new characters, which makes no sense from an optimization perspective. Interrupts provide a more efficient solution that aligns with embedded systems best practices. This validates the theoretical understanding with practical implementation. The modular design shows proper embedded systems design principles by separating hardware abstraction through SDK drivers, application logic through the state machine, and low-level control through assembly language. The bidirectional UART communication demonstrates both transmission and reception capabilities, meeting the course requirement.
 
 This proof of concept could be scaled into a more complete system. A battery-powered device with an embedded microcontroller, similar to a TV remote controller, could be built using the same principles. All buttons could be configured and customized to each patient's specific needs. The state machine architecture supports adding more alert types without major changes.
 
@@ -86,7 +104,7 @@ Future enhancements could include completing the SD card audio playback feature,
 
 ## 6. Development Process and Obstacles
 
-Development followed an incremental approach. The first phase focused on basic GPIO functionality using polling. The second phase added interrupt handling. The third phase added serial communication. The fourth phase implemented the state machine. The final phase implemented assembly language code.
+Development followed an incremental approach. The first phase focused on basic GPIO functionality using polling. The second phase added interrupt handling for buttons. The third phase added serial communication with keyboard input initially implemented using polling for simplicity. The fourth phase implemented the state machine. The fifth phase implemented assembly language code. The final phase optimized keyboard input to use interrupts instead of polling, ensuring the entire system follows interrupt-driven architecture principles.
 
 Several technical obstacles appeared during development. One initial challenge was configuring GPIO interrupts correctly. The interrupt system needs coordination between multiple steps: port pin configuration, GPIO pin setup, interrupt type selection, and NVIC interrupt enable. Missing any step results in non-functional interrupts. The solution involved reviewing the SDK documentation and example code [8].
 
@@ -108,7 +126,7 @@ During development, initial plans included SD card audio playback functionality.
 
 This project demonstrates embedded systems concepts including GPIO configuration, interrupt handling, state machine design, and assembly language programming. The final system provides a functional proof of concept showing how these concepts can be applied to build assistive communication devices. The implementation uses three distinct peripherals: GPIO for buttons and LEDs, UART for bidirectional serial communication, and the combination of these peripherals controlled through keyboard input.
 
-The development process showed the importance of incremental development, proper debugging techniques, and making practical decisions when facing technical complexity. The interrupt-driven architecture validates that interrupts provide better efficiency compared to polling, and the state machine provides reliable, predictable system behavior. The assembly language implementation demonstrates proficiency in low-level programming, with over one hundred lines of code directly manipulating hardware registers.
+The development process showed the importance of incremental development, proper debugging techniques, and making practical decisions when facing technical complexity. The interrupt-driven architecture validates that interrupts provide better efficiency compared to polling for all inputs (buttons and keyboard), and the state machine provides reliable, predictable system behavior. The assembly language implementation demonstrates proficiency in low-level programming, with over one hundred lines of code directly manipulating hardware registers.
 
 The system meets all course requirements, including GPIO interrupt handlers, bidirectional UART communication, state machine logic, and extensive assembly language programming. All code is available in the GitHub repository with detailed comments, and the system demonstrates that the concepts learned in class can be applied to build functional embedded systems.
 

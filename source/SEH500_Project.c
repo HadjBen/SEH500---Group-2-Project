@@ -25,6 +25,7 @@ void func_red_led_off(void);
 
 // Forward declarations
 static void setup_button_interrupts(void);
+static void setup_uart_interrupts(void);
 static void handle_water_alert(void);
 static void handle_washroom_alert(void);
 
@@ -75,36 +76,22 @@ int main(void) {
     setup_button_interrupts();
     PRINTF("Button interrupts configured\r\n");
 
+    // Setup UART interrupts for keyboard input (optimized - no polling!)
+    setup_uart_interrupts();
+    PRINTF("UART interrupts configured (keyboard input)\r\n");
+
     PRINTF("System ready.\r\n");
     PRINTF("SW2 - Toggle water alert (Green LED flicker)\r\n");
     PRINTF("SW3 - Toggle washroom alert (Red LED flicker)\r\n");
     PRINTF("Keyboard: 'W' - Water alert, 'T' - Washroom alert\r\n");
+    PRINTF("All inputs now use interrupts (optimized - no polling!)\r\n");
 
-    // Main loop: check for UART keyboard input
+    // Main loop: Now empty! CPU can sleep or do other work
+    // All input handling is done via interrupts (buttons and keyboard)
     while(1) {
-        // Check if UART has received data (non-blocking)
-        // Cast BOARD_DEBUG_UART_BASEADDR back to UART_Type* pointer
-        UART_Type *uartBase = (UART_Type *)BOARD_DEBUG_UART_BASEADDR;
-        uint32_t statusFlags = UART_GetStatusFlags(uartBase);
-        if (statusFlags & kUART_RxDataRegFullFlag) {
-            // Read character from UART
-            uint8_t ch = UART_ReadByte(uartBase);
-            
-            // Process keyboard commands
-            if (ch == 'W' || ch == 'w') {
-                PRINTF("[KEYBOARD] 'W' pressed - Water alert\r\n");
-                handle_water_alert();
-            } else if (ch == 'T' || ch == 't') {
-                PRINTF("[KEYBOARD] 'T' pressed - Washroom alert\r\n");
-                handle_washroom_alert();
-            } else if (ch != '\r' && ch != '\n') {
-                // Ignore carriage return and newline, but echo other characters
-                PRINTF("[KEYBOARD] Received: '%c' (0x%02X) - ignored\r\n", ch, ch);
-            }
-        }
-        
-        // Small delay to prevent CPU spinning
-        __asm volatile ("nop");
+        // CPU can enter low-power mode or do other tasks
+        // No polling needed - interrupts handle everything!
+        __WFI();  // Wait For Interrupt - CPU enters low-power mode until interrupt occurs
     }
     return 0;
 }
@@ -198,6 +185,32 @@ void PIT0_IRQHandler(void) {
     }
 }
 
+// UART interrupt handler - handles keyboard input (optimized - interrupt-driven!)
+// This replaces the polling loop in main() for better CPU efficiency
+// Handler name must match the interrupt vector table: UART0_RX_TX_IRQHandler
+void UART0_RX_TX_IRQHandler(void) {
+    UART_Type *uartBase = (UART_Type *)BOARD_DEBUG_UART_BASEADDR;
+    uint32_t statusFlags = UART_GetStatusFlags(uartBase);
+    
+    // Check if data was received
+    if (statusFlags & kUART_RxDataRegFullFlag) {
+        // Read character from UART receive register
+        uint8_t ch = UART_ReadByte(uartBase);
+        
+        // Process keyboard commands
+        if (ch == 'W' || ch == 'w') {
+            PRINTF("[KEYBOARD] 'W' pressed - Water alert\r\n");
+            handle_water_alert();
+        } else if (ch == 'T' || ch == 't') {
+            PRINTF("[KEYBOARD] 'T' pressed - Washroom alert\r\n");
+            handle_washroom_alert();
+        } else if (ch != '\r' && ch != '\n') {
+            // Ignore carriage return and newline, but echo other characters
+            PRINTF("[KEYBOARD] Received: '%c' (0x%02X) - ignored\r\n", ch, ch);
+        }
+    }
+}
+
 // Setup button GPIO interrupts
 // Manually configure pins since ConfigTools wasn't used
 static void setup_button_interrupts(void) {
@@ -233,4 +246,19 @@ static void setup_button_interrupts(void) {
     EnableIRQ(PORTA_IRQn);
     
     PRINTF("Button interrupts configured: SW2(PTD11), SW3(PTA10)\r\n");
+}
+
+// Setup UART interrupts for keyboard input (optimized - replaces polling!)
+// This enables interrupt-driven keyboard input instead of constant polling
+static void setup_uart_interrupts(void) {
+    UART_Type *uartBase = (UART_Type *)BOARD_DEBUG_UART_BASEADDR;
+    
+    // Enable UART RX interrupt (triggered when data arrives in receive register)
+    UART_EnableInterrupts(uartBase, kUART_RxDataRegFullInterruptEnable);
+    
+    // Enable UART interrupt in NVIC (interrupt controller)
+    // Note: UART0_RX_TX_IRQn is the interrupt number for UART0 on FRDM-K66F
+    EnableIRQ(UART0_RX_TX_IRQn);
+    
+    PRINTF("UART RX interrupts enabled - keyboard input now interrupt-driven\r\n");
 }

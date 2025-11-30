@@ -322,39 +322,24 @@ This is the main C application file that ties everything together.
 - Line 79: `PRINTF("SW2 - Toggle water alert (Green LED flicker)\r\n");` - Print instruction for SW2 button.
 - Line 80: `PRINTF("SW3 - Toggle washroom alert (Red LED flicker)\r\n");` - Print instruction for SW3 button.
 - Line 81: `PRINTF("Keyboard: 'W' - Water alert, 'T' - Washroom alert\r\n");` - Print instruction for keyboard commands.
+- Line 82: `PRINTF("All inputs now use interrupts (optimized - no polling!)\r\n");` - Print message indicating that all inputs use interrupts for optimization.
 
-**Lines 85-108: Main Loop**
+**Lines 79-81: Setup UART Interrupts**
 
-- Line 85: `while(1) {` - Start an infinite loop. The program will run this loop forever.
+- Line 79: `setup_uart_interrupts();` - Call function to configure UART interrupts for keyboard input (defined later in the file).
+- Line 80: `PRINTF("UART interrupts configured (keyboard input)\r\n");` - Print confirmation message.
 
-**Lines 87-89: Check for UART Input**
+**Lines 89-95: Main Loop (Interrupt-Driven)**
 
-- Line 87: `UART_Type *uartBase = (UART_Type *)BOARD_DEBUG_UART_BASEADDR;` - Create a pointer variable `uartBase` that points to the UART hardware. Cast `BOARD_DEBUG_UART_BASEADDR` (which is a number) to a `UART_Type *` pointer type.
-- Line 88: `uint32_t statusFlags = UART_GetStatusFlags(uartBase);` - Read the UART status flags register to see if data has been received. Store the result in `statusFlags`.
-- Line 89: `if (statusFlags & kUART_RxDataRegFullFlag) {` - Check if the "Receive Data Register Full" flag is set. The `&` is a bitwise AND operation. If the flag is set, it means a character was received.
+- Line 89: `// Main loop: Now empty! CPU can sleep or do other work` - Comment explaining that the main loop is now empty because all input handling is done via interrupts.
+- Line 90: `// All input handling is done via interrupts (buttons and keyboard)` - Comment explaining that interrupts handle all inputs.
+- Line 91: `while(1) {` - Start an infinite loop. The program will run this loop forever.
+- Line 92: `// CPU can enter low-power mode or do other tasks` - Comment explaining that the CPU can sleep or do other work.
+- Line 93: `// No polling needed - interrupts handle everything!` - Comment explaining that polling is no longer needed.
+- Line 94: `__WFI();` - Wait For Interrupt instruction. This tells the CPU to enter low-power mode and wait until an interrupt occurs. When an interrupt happens (button press, keyboard input, or timer), the CPU wakes up, handles the interrupt, then returns here to sleep again. This is much more efficient than constantly polling for input.
+- Line 95: `}` - End of the while loop.
 
-**Lines 91-103: Process Received Character**
-
-- Line 91: `uint8_t ch = UART_ReadByte(uartBase);` - Read one byte (character) from the UART and store it in variable `ch`.
-
-**Lines 94-103: Handle Keyboard Commands**
-
-- Line 94: `if (ch == 'W' || ch == 'w') {` - Check if the character is uppercase 'W' OR lowercase 'w'. The `||` means logical OR.
-- Line 95: `PRINTF("[KEYBOARD] 'W' pressed - Water alert\r\n");` - Print a message that 'W' was pressed.
-- Line 96: `handle_water_alert();` - Call the function to handle water alert (toggle it on or off).
-- Line 97: `} else if (ch == 'T' || ch == 't') {` - Otherwise, if the character is 'T' or 't'.
-- Line 98: `PRINTF("[KEYBOARD] 'T' pressed - Washroom alert\r\n");` - Print a message that 'T' was pressed.
-- Line 99: `handle_washroom_alert();` - Call the function to handle washroom alert.
-- Line 100: `} else if (ch != '\r' && ch != '\n') {` - Otherwise, if the character is NOT carriage return AND NOT newline (these are line ending characters we want to ignore).
-- Line 102: `PRINTF("[KEYBOARD] Received: '%c' (0x%02X) - ignored\r\n", ch, ch);` - Print a message showing what character was received (as character and as hexadecimal number), but we're ignoring it.
-- Line 103: `}` - End the else-if block.
-
-**Lines 107-108: End of Main Loop**
-
-- Line 107: `__asm volatile ("nop");` - Inline assembly instruction "nop" (no operation). This does nothing but takes one CPU cycle, preventing the loop from running too fast and wasting power.
-- Line 108: `}` - End of the while loop.
-
-**Line 109: Return Statement**
+**Line 96: Return Statement**
 
 - `return 0;` - Return 0 from main function (indicates successful program completion). This line is never reached because of the infinite loop, but it's good practice to include it.
 
@@ -529,6 +514,71 @@ This is the main C application file that ties everything together.
 
 - `}` - End of function.
 
+### Function: UART0_RX_TX_IRQHandler()
+
+**Line 191: Function Declaration**
+
+- `void UART0_RX_TX_IRQHandler(void) {` - Define the UART interrupt handler function. This function is automatically called by the hardware when UART0 receives data (when a keyboard character arrives). The handler name must match the interrupt vector table.
+
+**Lines 192-193: Get UART Base Address and Status Flags**
+
+- Line 192: `UART_Type *uartBase = (UART_Type *)BOARD_DEBUG_UART_BASEADDR;` - Create a pointer variable `uartBase` that points to the UART hardware. Cast `BOARD_DEBUG_UART_BASEADDR` (which is a number) to a `UART_Type *` pointer type.
+- Line 193: `uint32_t statusFlags = UART_GetStatusFlags(uartBase);` - Read the UART status flags register to see what event triggered the interrupt. Store the result in `statusFlags`.
+
+**Lines 195-196: Check if Data Was Received**
+
+- Line 195: `// Check if data was received` - Comment explaining what we're checking.
+- Line 196: `if (statusFlags & kUART_RxDataRegFullFlag) {` - Check if the "Receive Data Register Full" flag is set. The `&` is a bitwise AND operation. If the flag is set, it means a character was received and is ready to be read.
+
+**Lines 197-198: Read Character**
+
+- Line 197: `// Read character from UART receive register` - Comment explaining what we're doing.
+- Line 198: `uint8_t ch = UART_ReadByte(uartBase);` - Read one byte (character) from the UART receive register and store it in variable `ch`. This removes the character from the UART's receive buffer.
+
+**Lines 200-210: Process Keyboard Commands**
+
+- Line 200: `// Process keyboard commands` - Comment explaining what we're doing.
+- Line 201: `if (ch == 'W' || ch == 'w') {` - Check if the character is uppercase 'W' OR lowercase 'w'. The `||` means logical OR.
+- Line 202: `PRINTF("[KEYBOARD] 'W' pressed - Water alert\r\n");` - Print a message that 'W' was pressed.
+- Line 203: `handle_water_alert();` - Call the function to handle water alert (toggle it on or off).
+- Line 204: `} else if (ch == 'T' || ch == 't') {` - Otherwise, if the character is 'T' or 't'.
+- Line 205: `PRINTF("[KEYBOARD] 'T' pressed - Washroom alert\r\n");` - Print a message that 'T' was pressed.
+- Line 206: `handle_washroom_alert();` - Call the function to handle washroom alert.
+- Line 207: `} else if (ch != '\r' && ch != '\n') {` - Otherwise, if the character is NOT carriage return AND NOT newline (these are line ending characters we want to ignore).
+- Line 209: `PRINTF("[KEYBOARD] Received: '%c' (0x%02X) - ignored\r\n", ch, ch);` - Print a message showing what character was received (as character and as hexadecimal number), but we're ignoring it.
+- Line 210: `}` - End the else-if block.
+- Line 211: `}` - End the if statement checking for received data.
+- Line 212: `}` - End of function.
+
+### Function: setup_uart_interrupts()
+
+**Line 253: Function Declaration**
+
+- `static void setup_uart_interrupts(void) {` - Define a function that configures UART interrupts for keyboard input. `static` means it's only used within this file.
+
+**Line 254: Get UART Base Address**
+
+- `UART_Type *uartBase = (UART_Type *)BOARD_DEBUG_UART_BASEADDR;` - Create a pointer variable `uartBase` that points to the UART hardware register.
+
+**Lines 256-257: Enable UART RX Interrupt**
+
+- Line 256: `// Enable UART RX interrupt (triggered when data arrives in receive register)` - Comment explaining what we're doing.
+- Line 257: `UART_EnableInterrupts(uartBase, kUART_RxDataRegFullInterruptEnable);` - Enable the UART receive interrupt. This tells the UART hardware to generate an interrupt signal when data arrives in the receive register. The interrupt will trigger `UART0_RX_TX_IRQHandler()` automatically.
+
+**Lines 259-261: Enable NVIC Interrupt**
+
+- Line 259: `// Enable UART interrupt in NVIC (interrupt controller)` - Comment explaining what we're doing.
+- Line 260: `// Note: UART0_RX_TX_IRQn is the interrupt number for UART0 on FRDM-K66F` - Comment explaining which interrupt number we're using.
+- Line 261: `EnableIRQ(UART0_RX_TX_IRQn);` - Enable the UART0 interrupt in the NVIC (Nested Vectored Interrupt Controller). This allows the interrupt handler to actually be called when the UART receives data. Without this, the interrupt would be generated but not processed.
+
+**Line 263: Print Confirmation**
+
+- `PRINTF("UART RX interrupts enabled - keyboard input now interrupt-driven\r\n");` - Print confirmation message indicating that UART interrupts are configured.
+
+**Line 264: End Function**
+
+- `}` - End of function.
+
 ---
 
 ## Summary
@@ -537,9 +587,10 @@ This code implements an assistive communication device with the following key fe
 
 1. **LED Control (Assembly)**: Direct hardware register manipulation to control green and red LEDs.
 2. **Button Interrupts**: Hardware interrupts detect button presses instantly without polling.
-3. **State Machine**: Three states (IDLE, WATER_ALERT, WASHROOM_ALERT) manage system behavior.
-4. **Timer Interrupts**: PIT timer generates periodic interrupts to blink LEDs during alerts.
-5. **UART Communication**: Bidirectional serial communication allows keyboard control and debug output.
+3. **UART Interrupts**: Hardware interrupts detect keyboard input instantly without polling.
+4. **State Machine**: Three states (IDLE, WATER_ALERT, WASHROOM_ALERT) manage system behavior.
+5. **Timer Interrupts**: PIT timer generates periodic interrupts to blink LEDs during alerts.
+6. **UART Communication**: Bidirectional serial communication allows keyboard control and debug output.
 
 The code follows embedded systems best practices:
 
