@@ -24,7 +24,7 @@ This project is a proof of concept showing how embedded systems components work 
 
 Visual feedback comes from color-coded LEDs: green for water requests and red for washroom requests. During an active alert, the corresponding LED flashes continuously. LED control uses assembly language functions that directly manipulate GPIO registers. Bidirectional UART communication at 115200 baud allows keyboard control ('W' for water, 'T' for washroom) and debug output. A state machine with three states (IDLE, WATER_ALERT, WASHROOM_ALERT) manages system behavior, so only one active alert runs at a time. The interrupt-based design removes CPU polling overhead: GPIO interrupts detect button presses instantly, UART interrupts detect keyboard input instantly, and the Periodic Interrupt Timer (PIT) generates interrupts every 500 milliseconds to control LED flashing.
 
-![1764552158356](image/SEH500_Project_Report/1764552158356.png)
+![1764631081947](image/SEH500_Project_Report/1764631081947.png)
 
 ---
 
