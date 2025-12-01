@@ -15,14 +15,14 @@
 ## Current Status
 
 ✅ **Complete:** Buttons, LEDs, UART keyboard control, state machine, interrupt handlers, assembly code
+✅ **Fully Interrupt-Driven:** All inputs (buttons and keyboard) use hardware interrupts - no polling
 
 ## Documentation
 
 All documentation is in the `documents/` folder:
 
-- **`documents/SEH500_Project_Report_Revised.md`** - Final technical report (for submission)
+- **`documents/SEH500_Project_Report.md`** - Final technical report (for submission)
 - **`documents/CODE_EXPLANATION.md`** - Detailed line-by-line code explanation
-- **`documents/README.md`** - Detailed README
 
 ## Hardware
 
@@ -51,16 +51,21 @@ SEH500_Project/
 
 ## Features
 
-- **Interrupt-driven GPIO** - Button presses trigger hardware interrupts
+- **Fully Interrupt-Driven Architecture** - All inputs use hardware interrupts (no polling)
+  - GPIO interrupts for button presses (SW2, SW3)
+  - UART interrupts for keyboard input ('W', 'T')
+  - PIT timer interrupts for LED blinking (500ms intervals)
 - **State machine** - Three states (IDLE, WATER_ALERT, WASHROOM_ALERT)
-- **Assembly language** - Direct hardware register manipulation for LED control
-- **Bidirectional UART** - Keyboard input and debug output
-- **PIT Timer** - Periodic interrupts for LED blinking (500ms intervals)
+- **Assembly language** - Direct hardware register manipulation for LED control (100+ lines)
+- **Bidirectional UART** - Keyboard input and debug output at 115200 baud
+- **Low-Power Design** - Main loop uses `__WFI()` (Wait For Interrupt) for CPU sleep mode
 
 ## Code Overview
 
 - **`source/SEH500_Project.c`** - Main application with state machine and interrupt handlers
-- **`source/gpio_led.s`** - Assembly functions for LED control
-- **`source/wav_parser.s`** - Assembly functions for WAV file parsing (reference only, not used)
+  - Four interrupt service routines: PORTD (SW2), PORTA (SW3), UART0 (keyboard), PIT0 (timer)
+  - Main loop uses `__WFI()` for low-power operation
+- **`source/gpio_led.s`** - Assembly functions for LED control (setup and on/off functions)
+- **`source/wav_parser.s`** - Assembly functions for WAV file parsing (reference only, not used in final implementation)
 
 See `documents/CODE_EXPLANATION.md` for detailed line-by-line explanations of all code.
