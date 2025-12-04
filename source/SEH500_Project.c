@@ -63,6 +63,7 @@ int main(void) {
     func_red_led_off();
     PRINTF("Onboard LEDs initialized (Green=Water, Red=Washroom)\r\n");
 
+    // The following section (lines 67-74) was implemented using GenAI assistance
     // Initialize PIT timer for LED flicker (500ms intervals)
     pit_config_t pitConfig;
     PIT_GetDefaultConfig(&pitConfig);
@@ -86,12 +87,8 @@ int main(void) {
     PRINTF("Keyboard: 'W' - Water alert, 'T' - Washroom alert\r\n");
     PRINTF("All inputs now use interrupts (optimized - no polling!)\r\n");
 
-    // Main loop: Now empty! CPU can sleep or do other work
-    // All input handling is done via interrupts (buttons and keyboard)
     while(1) {
-        // CPU can enter low-power mode or do other tasks
-        // No polling needed - interrupts handle everything!
-        __WFI();  // Wait For Interrupt - CPU enters low-power mode until interrupt occurs
+        __WFI();  // Wait For Interrupt - CPU enters low-power mode until interrupt occurs // __WFI() clarified by GenAI
     }
     return 0;
 }
@@ -123,7 +120,7 @@ static void handle_water_alert(void) {
 // SW2 button interrupt handler (PTD11) - Water button
 // Handler name must match the interrupt vector table: PORTD_IRQHandler
 void PORTD_IRQHandler(void) {
-    GPIO_PortClearInterruptFlags(WATER_BUTTON_PORT, 1U << WATER_BUTTON_PIN);
+    GPIO_PortClearInterruptFlags(WATER_BUTTON_PORT, 1U << WATER_BUTTON_PIN); // line 123 clarified by GenAI
     PRINTF("[BUTTON PRESS] SW2 pressed!\r\n");
     handle_water_alert();
 }
@@ -156,14 +153,14 @@ static void handle_washroom_alert(void) {
 // SW3 button interrupt handler (PTA10) - Washroom button
 // Handler name must match the interrupt vector table: PORTA_IRQHandler
 void PORTA_IRQHandler(void) {
-    GPIO_PortClearInterruptFlags(WASHROOM_BUTTON_PORT, 1U << WASHROOM_BUTTON_PIN);
+    GPIO_PortClearInterruptFlags(WASHROOM_BUTTON_PORT, 1U << WASHROOM_BUTTON_PIN); // line 156 clarified by GenAI
     PRINTF("[BUTTON PRESS] SW3 pressed!\r\n");
     handle_washroom_alert();
 }
 
 // PIT Timer interrupt handler - triggers every 500ms for LED flicker
 void PIT0_IRQHandler(void) {
-    PIT_ClearStatusFlags(PIT, kPIT_Chnl_0, kPIT_TimerFlag);
+    PIT_ClearStatusFlags(PIT, kPIT_Chnl_0, kPIT_TimerFlag); // line 164 clarified by GenAI
     
     // Toggle LED blink state (every 500ms)
     if (current_state == STATE_WATER_ALERT) {
@@ -185,9 +182,10 @@ void PIT0_IRQHandler(void) {
     }
 }
 
-// UART interrupt handler - handles keyboard input (optimized - interrupt-driven!)
-// This replaces the polling loop in main() for better CPU efficiency
-// Handler name must match the interrupt vector table: UART0_RX_TX_IRQHandler
+// The following section (lines 189-210) was implemented using GenAI assistance
+// UART interrupt handler - handles keyboard input 
+// replaces polling loop in main() for better CPU efficiency
+// Handler name must match interrupt vector table: UART0_RX_TX_IRQHandler
 void UART0_RX_TX_IRQHandler(void) {
     UART_Type *uartBase = (UART_Type *)BOARD_DEBUG_UART_BASEADDR;
     uint32_t statusFlags = UART_GetStatusFlags(uartBase);
@@ -211,6 +209,7 @@ void UART0_RX_TX_IRQHandler(void) {
     }
 }
 
+// The following section (lines 215-248) was implemented using GenAI assistance
 // Setup button GPIO interrupts
 // Manually configure pins since ConfigTools wasn't used
 static void setup_button_interrupts(void) {
@@ -248,8 +247,9 @@ static void setup_button_interrupts(void) {
     PRINTF("Button interrupts configured: SW2(PTD11), SW3(PTA10)\r\n");
 }
 
-// Setup UART interrupts for keyboard input (optimized - replaces polling!)
-// This enables interrupt-driven keyboard input instead of constant polling
+// The following section (lines 253-263) was implemented using GenAI assistance
+// Setup UART interrupts for keyboard input 
+// enables interrupt-driven keyboard input instead of constant polling
 static void setup_uart_interrupts(void) {
     UART_Type *uartBase = (UART_Type *)BOARD_DEBUG_UART_BASEADDR;
     
@@ -257,7 +257,7 @@ static void setup_uart_interrupts(void) {
     UART_EnableInterrupts(uartBase, kUART_RxDataRegFullInterruptEnable);
     
     // Enable UART interrupt in NVIC (interrupt controller)
-    // Note: UART0_RX_TX_IRQn is the interrupt number for UART0 on FRDM-K66F
+    // UART0_RX_TX_IRQn is interrupt number for UART0 on FRDM-K66F
     EnableIRQ(UART0_RX_TX_IRQn);
     
     PRINTF("UART RX interrupts enabled - keyboard input now interrupt-driven\r\n");
