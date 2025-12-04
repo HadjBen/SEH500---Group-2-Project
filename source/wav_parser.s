@@ -1,5 +1,5 @@
 // WAV File Header Parser Assembly Functions
-// 100+ lines of assembly for reading and parsing WAV file headers from SD card
+// reading and parsing WAV file headers from SD card
 .syntax unified
 .cpu cortex-m4
 .thumb

@@ -46,8 +46,6 @@ The project includes over one hundred lines of assembly language code, meeting t
 
 The LED control module in `gpio_led.s` contains functions that directly manipulate hardware registers. Setup functions configure LED pins by enabling port clocks, setting pin control registers to GPIO mode, and configuring data direction registers for output. LED control functions use read-modify-write operations on GPIO data output registers to toggle LEDs while preserving other pin states. Since LEDs use active-low logic, writing 0 turns them on and writing 1 turns them off. All functions follow ARM AAPCS calling conventions, preserving registers R4-R11 when used.
 
-The WAV file parsing module in `wav_parser.s` contains functions for reading and interpreting WAV file headers. Although audio playback wasn't fully implemented due to complexity, the parsing functions show assembly language skills for data structure manipulation.
-
 The assembly implementation gives direct access to memory-mapped registers, letting us manipulate data efficiently without the overhead of C function calls for simple operations. This approach works well for time-critical operations like GPIO control and file header parsing, where execution speed matters. The code uses NXP SDK drivers for peripheral configuration, which simplifies hardware access. Low-level operations that need direct register access use assembly language, combining driver convenience with direct hardware control [4].
 
 ---
